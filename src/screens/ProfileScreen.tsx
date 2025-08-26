@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     SafeAreaView,
     View,
@@ -10,20 +10,18 @@ import {
     Alert,
     StatusBar,
     Image,
-    TextInputProps
+    TextInputProps,
+    ActivityIndicator
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { SvgXml } from 'react-native-svg';
-import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
+import { launchImageLibrary, ImageLibraryOptions, Asset } from 'react-native-image-picker';
+import { getMyProfile, updateMyProfile, uploadIntroVideo } from '../api/api';
 
-// --- SVG Icons ---
 const userIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
-const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>`;
+const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81 .7A2 2 0 0 1 22 16.92z"></path></svg>`;
 const githubIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>`;
-const universityIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v11h18V10M3 10V4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M12 2v20"></path><path d="M6 12h12"></path></svg>`;
 const locationIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
-const majorIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 1 4 14.5V4A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
-const calendarIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
 const skillsIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
 const uploadIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
 const cameraIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
@@ -46,132 +44,205 @@ type ProfileScreenProps = {
 const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     const user = auth().currentUser;
 
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
     const [github, setGithub] = useState('');
-    const [university, setUniversity] = useState('');
     const [location, setLocation] = useState('');
-    const [major, setMajor] = useState('');
-    const [gradYear, setGradYear] = useState('');
     const [skills, setSkills] = useState('');
     const [aboutMe, setAboutMe] = useState('');
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
-    const [videoUri, setVideoUri] = useState<string | null>(null);
+    const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-    const handleChooseAvatar = () => {
-        const options: ImageLibraryOptions = {
-            mediaType: 'photo',
-            quality: 1,
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await getMyProfile();
+                const profile = response.data;
+                if (profile) {
+                    setFullName(profile.name || '');
+                    setPhone(profile.phone || '');
+                    setGithub(profile.github || '');
+                    setLocation(profile.location || '');
+                    setSkills(profile.skills?.join(', ') || '');
+                    setAboutMe(profile.aboutMe || '');
+                    setVideoUrl(profile.videoUrl || null);
+                }
+            } catch (error) {
+                console.error("Failed to fetch profile:", error);
+                Alert.alert("Error", "Could not load your profile data.");
+            } finally {
+                setLoading(false);
+            }
         };
+        fetchProfile();
+    }, []);
+
+    const handleChooseMedia = (mediaType: 'photo' | 'video', callback: (asset: Asset) => void) => {
+        const options: ImageLibraryOptions = {
+            mediaType,
+            quality: 1,
+            durationLimit: 60,
+        } as any;
+
         launchImageLibrary(options, (response) => {
             if (response.didCancel) {
-                console.log('User cancelled image picker');
-            } else if (response.errorCode) {
+                console.log('User cancelled media picker');
+                return;
+            };
+            if (response.errorCode) {
                 console.log('ImagePicker Error: ', response.errorMessage);
-                Alert.alert('Error', 'Could not select image. Please try again.');
-            } else if (response.assets && response.assets[0].uri) {
-                setAvatarUri(response.assets[0].uri);
+                Alert.alert('Error', `Could not select ${mediaType}. Please try again.`);
+                return;
             }
+            if (response.assets && response.assets[0]) {
+                callback(response.assets[0]);
+            }
+        });
+    };
+
+    const handleChooseAvatar = () => {
+        handleChooseMedia('photo', (asset) => {
+            setAvatarUri(asset.uri || null);
         });
     };
 
     const handleChooseVideo = () => {
-        const options: ImageLibraryOptions = {
-            mediaType: 'video',
-            quality: 1,
-        };
-        launchImageLibrary(options, (response) => {
-            if (response.didCancel) {
-                console.log('User cancelled video picker');
-            } else if (response.errorCode) {
-                console.log('ImagePicker Error: ', response.errorMessage);
-                Alert.alert('Error', 'Could not select video. Please try again.');
-            } else if (response.assets && response.assets[0].uri) {
-                setVideoUri(response.assets[0].uri);
-                Alert.alert("Video Selected", "Your video is ready to be uploaded.");
+        handleChooseMedia('video', async (asset) => {
+            if (!asset.uri || !asset.fileName || !asset.type) {
+                Alert.alert("Error", "Selected video file is invalid.");
+                return;
+            }
+
+            setIsUploadingVideo(true);
+            try {
+                const formData = new FormData();
+                formData.append('video', {
+                    uri: asset.uri,
+                    name: asset.fileName,
+                    type: asset.type,
+                });
+
+                const response = await uploadIntroVideo(formData);
+                
+                Alert.alert("Success", "Your profile video has been uploaded!");
+
+                if (response.data && response.data.videoUrl) {
+                    setVideoUrl(response.data.videoUrl);
+                } else {
+                    getMyProfile().then(res => setVideoUrl(res.data.videoUrl || null));
+                }
+
+            } catch (error) {
+                console.error("Video upload failed:", error);
+                Alert.alert("Upload Failed", "Could not upload your video. Please try again.");
+            } finally {
+                setIsUploadingVideo(false);
             }
         });
     };
 
-    const handleSaveChanges = () => {
-        Alert.alert("Profile Saved", "Your information has been updated!");
-        navigation.goBack();
+    const handleSaveChanges = async () => {
+        setSaving(true);
+        try {
+            const profileData = {
+                name: fullName,
+                phone,
+                github,
+                location,
+                aboutMe,
+                skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+            };
+            await updateMyProfile(profileData);
+            Alert.alert("Profile Saved", "Your information has been updated!");
+            navigation.goBack();
+        } catch (error) {
+            console.error("Failed to save profile:", error);
+            Alert.alert("Error", "Could not save your profile.");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const getInitials = () => {
-        if (user && user.email) {
-            return user.email.substring(0, 2).toUpperCase();
-        }
-        return '??';
+        if (fullName) return fullName.split(' ').map(n => n[0]).join('').toUpperCase();
+        return user?.email?.substring(0, 2).toUpperCase() || '??';
     };
 
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <ActivityIndicator style={{ flex: 1 }} size="large" color="#6366F1" />
+            </SafeAreaView>
+        );
+    }
+   
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
                     <Text style={styles.title}>My Profile</Text>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <TouchableOpacity onPress={handleSaveChanges}>
                         <Text style={styles.doneText}>Done</Text>
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.profileHeader}>
-                    <View style={styles.avatarContainer}>
-                        <TouchableOpacity onPress={handleChooseAvatar}>
-                            {avatarUri ? (
-                                <Image source={{ uri: avatarUri }} style={styles.avatar} />
-                            ) : (
-                                <View style={styles.avatar}>
-                                    <Text style={styles.avatarText}>{getInitials()}</Text>
-                                </View>
-                            )}
-                            <View style={styles.avatarEditButton}>
-                                <SvgXml xml={cameraIcon} />
+                    <TouchableOpacity style={styles.avatarContainer} onPress={handleChooseAvatar}>
+                        {avatarUri ? (
+                            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+                        ) : (
+                           <View style={styles.avatar}>
+                               <Text style={styles.avatarText}>{getInitials()}</Text>
                             </View>
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={styles.profileName}>{fullName || 'Alex Johnson'}</Text>
+                        )}
+                        {/* <View style={styles.avatarEditButton}>             //Camera Icon Button
+                            <SvgXml xml={cameraIcon} />
+                        </View> */}
+                    </TouchableOpacity>
+                    <Text style={styles.profileName}>{fullName || 'Your Name'}</Text>
                     <Text style={styles.profileEmail}>{user?.email}</Text>
                 </View>
 
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>Media</Text>
-                    <TouchableOpacity style={styles.uploadButton} onPress={handleChooseVideo}>
-                        <SvgXml xml={uploadIcon} stroke="#6366F1" />
-                        <Text style={styles.uploadButtonText}>Upload a Profile Video</Text>
+                    <TouchableOpacity style={styles.uploadButton} onPress={handleChooseVideo} disabled={isUploadingVideo}>
+                        {isUploadingVideo ? (
+                            <ActivityIndicator color="#6366F1" />
+                        ) : (
+                            <>
+                                <SvgXml xml={uploadIcon} stroke="#6366F1" />
+                                <Text style={styles.uploadButtonText}>Upload a Profile Video</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
-                    {/* --- THIS IS THE FIX --- */}
-                    {videoUri ? (
+                    {videoUrl && !isUploadingVideo && (
                         <View style={styles.videoPreview}>
-                            <Text style={styles.videoPreviewText}>Video selected and ready!</Text>
+                            <Text style={styles.videoPreviewText}>A video has been uploaded.</Text>
                         </View>
-                    ) : null}
+                    )}
                 </View>
 
                 <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Personal Information</Text>
+                    <Text style={styles.cardTitle}>Personal & Professional</Text>
                     <IconTextInput icon={userIcon} value={fullName} onChangeText={setFullName} placeholder="Full Name" />
                     <IconTextInput icon={phoneIcon} value={phone} onChangeText={setPhone} placeholder="Phone Number" keyboardType="phone-pad" />
-                    <IconTextInput icon={locationIcon} value={location} onChangeText={setLocation} placeholder="Location (e.g., Palo Alto, CA)" />
-                </View>
-
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Academic & Professional</Text>
-                    <IconTextInput icon={universityIcon} value={university} onChangeText={setUniversity} placeholder="University" />
-                    <IconTextInput icon={majorIcon} value={major} onChangeText={setMajor} placeholder="Major / Field of Study" />
-                    <IconTextInput icon={calendarIcon} value={gradYear} onChangeText={setGradYear} placeholder="Graduation Year" keyboardType="numeric" />
+                    <IconTextInput icon={locationIcon} value={location} onChangeText={setLocation} placeholder="Location (e.g., San Francisco, CA)" />
                     <IconTextInput icon={githubIcon} value={github} onChangeText={setGithub} placeholder="GitHub Profile URL" autoCapitalize="none" />
                     <IconTextInput icon={skillsIcon} value={skills} onChangeText={setSkills} placeholder="Skills (comma-separated)" />
                 </View>
 
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>About Me</Text>
-                    <TextInput style={[styles.input, styles.textArea]} value={aboutMe} onChangeText={setAboutMe} placeholder="Tell us about yourself, your interests, and career goals..." multiline placeholderTextColor="#9CA3AF" />
+                    <TextInput style={[styles.input, styles.textArea]} value={aboutMe} onChangeText={setAboutMe} placeholder="Tell us about yourself..." multiline placeholderTextColor="#9CA3AF" />
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={handleSaveChanges}>
-                    <Text style={styles.buttonText}>Save Changes</Text>
+                <TouchableOpacity style={styles.button} onPress={handleSaveChanges} disabled={saving}>
+                    {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>Save Changes</Text>}
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

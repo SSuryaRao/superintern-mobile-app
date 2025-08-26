@@ -16,7 +16,6 @@ api.interceptors.request.use(
       const auth = getAuth();
       const user = auth.currentUser;
 
-      // --- THE FIX ---
       // Only add the authentication token if a user is logged in AND
       // the request is NOT for the public '/tasks/available' endpoint.
       if (user && config.url !== '/tasks/available') {
@@ -114,10 +113,11 @@ export const deleteCV = () => {
   return api.delete('/users/delete-cv');
 };
 
+// Replace the old uploadIntroVideo function with this one
+
 export const uploadIntroVideo = (formData: FormData) => {
-  return api.post('/users/upload-video', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  // The 'headers' object has been removed to let Axios set it automatically
+  return api.post('/users/upload-video', formData); 
 };
 
 export const deleteIntroVideo = () => {

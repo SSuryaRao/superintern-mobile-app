@@ -12,7 +12,7 @@ import {
 import { SvgXml } from 'react-native-svg';
 import AppHeader from '../components/AppHeader';
 import auth from '@react-native-firebase/auth';
-import { getLeaderboard } from '../api/api'; // Import the API function
+import { getLeaderboard } from '../api/api';
 
 // --- Icons ---
 const crownIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>`;
@@ -20,8 +20,7 @@ const crownIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24
 // --- Type definition for a user in the leaderboard ---
 type LeaderboardUser = {
   _id: string;
-  fullName: string;
-  email: string;
+  name: string;
   points: number;
   rank: number;
 };
@@ -38,26 +37,24 @@ const LeaderboardScreen = () => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
 
-    // --- State management for loading, refreshing, and data ---
+    // --- State management ---
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
     const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null);
 
-    // --- Function to fetch data from the backend ---
+    // --- Function to fetch data ---
     const fetchLeaderboard = async () => {
         try {
             const response = await getLeaderboard();
             if (response.data && Array.isArray(response.data)) {
-                // Map the raw data and add a 'rank' property
                 const rankedData: LeaderboardUser[] = response.data.map((u, index) => ({
                     ...u,
                     rank: index + 1,
                 }));
                 setLeaderboard(rankedData);
 
-                // Find the currently logged-in user in the list
-                const myRank = rankedData.find(u => u.email === user?.email);
+                const myRank = rankedData.find(u => u._id === user?.uid);
                 setCurrentUserRank(myRank || null);
             }
         } catch (error) {
@@ -71,7 +68,6 @@ const LeaderboardScreen = () => {
     // --- Fetch data on component mount ---
     useEffect(() => {
         fetchLeaderboard();
-        // Start animations
         Animated.stagger(150, [
             Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
             Animated.spring(slideAnim, { toValue: 0, friction: 7, useNativeDriver: true }),
@@ -84,16 +80,16 @@ const LeaderboardScreen = () => {
         fetchLeaderboard();
     }, []);
 
-    // --- Component for rendering each item in the list ---
+    // --- Component for rendering each item ---
     const renderRankingItem = ({ item }: { item: LeaderboardUser }) => (
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateX: slideAnim }] }}>
             <View style={styles.rankingItem}>
                 <Text style={styles.rankingRank}>{item.rank}</Text>
                 <View style={styles.rankingAvatar}>
-                    <Text style={styles.rankingAvatarText}>{getInitials(item.fullName)}</Text>
+                    <Text style={styles.rankingAvatarText}>{getInitials(item.name)}</Text>
                 </View>
                 <View>
-                    <Text style={styles.rankingName}>{item.fullName}</Text>
+                    <Text style={styles.rankingName}>{item.name}</Text>
                     <Text style={styles.rankingInfo}>{item.points} pts</Text>
                 </View>
             </View>
@@ -120,7 +116,7 @@ const LeaderboardScreen = () => {
         <SafeAreaView style={styles.container}>
             <AppHeader />
             <FlatList
-                data={leaderboard.slice(3)} // Show ranks 4 and below in the list
+                data={leaderboard} // MODIFIED: Shows all users in the list
                 renderItem={renderRankingItem}
                 keyExtractor={item => item._id}
                 contentContainerStyle={styles.listContent}
@@ -146,37 +142,39 @@ const LeaderboardScreen = () => {
                         {leaderboard.length > 0 && (
                              <Animated.View style={[styles.podiumContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
                                 {/* 2nd Place */}
-                                {second && (
+                                {second ? (
                                     <View style={[styles.podiumItem, { transform: [{ translateY: 20 }] }]}>
-                                        <View style={[styles.podiumAvatar, styles.silverBorder]}><Text style={styles.podiumAvatarText}>{getInitials(second.fullName)}</Text></View>
-                                        <Text style={styles.podiumName} numberOfLines={1}>{second.fullName}</Text>
+                                        <View style={[styles.podiumAvatar, styles.silverBorder]}><Text style={styles.podiumAvatarText}>{getInitials(second.name)}</Text></View>
+                                        <Text style={styles.podiumName} numberOfLines={1}>{second.name}</Text>
                                         <View style={[styles.podiumPillar, styles.silverPillar]}><Text style={styles.podiumRank}>2</Text></View>
                                     </View>
-                                )}
+                                ) : <View style={styles.podiumItem} /> }
+                                
                                 {/* 1st Place */}
-                                {first && (
+                                {first ? (
                                     <View style={styles.podiumItem}>
                                         <SvgXml xml={crownIcon} width={32} height={32} />
-                                        <View style={[styles.podiumAvatar, styles.goldBorder]}><Text style={styles.podiumAvatarText}>{getInitials(first.fullName)}</Text></View>
-                                        <Text style={styles.podiumName} numberOfLines={1}>{first.fullName}</Text>
+                                        <View style={[styles.podiumAvatar, styles.goldBorder]}><Text style={styles.podiumAvatarText}>{getInitials(first.name)}</Text></View>
+                                        <Text style={styles.podiumName} numberOfLines={1}>{first.name}</Text>
                                         <View style={[styles.podiumPillar, styles.goldPillar]}><Text style={styles.podiumRank}>1</Text></View>
                                     </View>
-                                )}
+                                ) : <View style={styles.podiumItem} /> }
+
                                 {/* 3rd Place */}
-                                {third && (
+                                {third ? (
                                     <View style={[styles.podiumItem, { transform: [{ translateY: 40 }] }]}>
-                                        <View style={[styles.podiumAvatar, styles.bronzeBorder]}><Text style={styles.podiumAvatarText}>{getInitials(third.fullName)}</Text></View>
-                                        <Text style={styles.podiumName} numberOfLines={1}>{third.fullName}</Text>
+                                        <View style={[styles.podiumAvatar, styles.bronzeBorder]}><Text style={styles.podiumAvatarText}>{getInitials(third.name)}</Text></View>
+                                        <Text style={styles.podiumName} numberOfLines={1}>{third.name}</Text>
                                         <View style={[styles.podiumPillar, styles.bronzePillar]}><Text style={styles.podiumRank}>3</Text></View>
                                     </View>
-                                )}
+                                ) : <View style={styles.podiumItem} /> }
                             </Animated.View>
                         )}
                         
                         <Animated.Text style={[styles.listTitle, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>All Rankings</Animated.Text>
                     </>
                 }
-                 ListEmptyComponent={
+                ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No rankings to display yet.</Text>
                     </View>
@@ -239,8 +237,8 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 12,
     },
     goldPillar: { height: 100, backgroundColor: '#FEF3C7' },
-    silverPillar: { height: 80, backgroundColor: '#F3F4F6' },
-    bronzePillar: { height: 60, backgroundColor: '#FFE4E6' },
+    silverPillar: { height: 80, backgroundColor: '#E5E7EB' },
+    bronzePillar: { height: 60, backgroundColor: '#FDBA74' },
     podiumRank: { fontSize: 24, fontWeight: 'bold', color: '#1F2937' },
     listTitle: {
         fontSize: 20,
