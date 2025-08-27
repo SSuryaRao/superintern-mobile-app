@@ -11,11 +11,13 @@ import {
     StatusBar,
     Image,
     TextInputProps,
-    ActivityIndicator
+    ActivityIndicator,
+    ActionSheetIOS,
+    Platform
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { SvgXml } from 'react-native-svg';
-import { launchImageLibrary, ImageLibraryOptions, Asset } from 'react-native-image-picker';
+import { launchImageLibrary, launchCamera, ImageLibraryOptions, Asset, CameraOptions } from 'react-native-image-picker';
 import { getMyProfile, updateMyProfile, uploadIntroVideo } from '../api/api';
 
 const userIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
@@ -110,39 +112,118 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         });
     };
 
-    const handleChooseVideo = () => {
-        handleChooseMedia('video', async (asset) => {
-            if (!asset.uri || !asset.fileName || !asset.type) {
-                Alert.alert("Error", "Selected video file is invalid.");
+    const processVideo = async (asset: Asset) => {
+        if (!asset.uri) {
+            Alert.alert("Error", "Selected video file is invalid.");
+            return;
+        }
+
+        setIsUploadingVideo(true);
+        try {
+            const formData = new FormData();
+            
+            // Fix for React Native FormData - use proper structure
+            formData.append('video', {
+                uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
+                type: asset.type || 'video/mp4',
+                name: asset.fileName || `video_${Date.now()}.mp4`,
+            } as any);
+
+            const response = await uploadIntroVideo(formData);
+            
+            Alert.alert("Success", "Your profile video has been uploaded!");
+
+            if (response.data && response.data.videoUrl) {
+                setVideoUrl(response.data.videoUrl);
+            } else {
+                const profileResponse = await getMyProfile();
+                setVideoUrl(profileResponse.data.videoUrl || null);
+            }
+
+        } catch (error) {
+            console.error("Video upload failed:", error);
+            Alert.alert("Upload Failed", "Could not upload your video. Please try again.");
+        } finally {
+            setIsUploadingVideo(false);
+        }
+    };
+
+    const handleRecordVideo = () => {
+        const options: CameraOptions = {
+            mediaType: 'video',
+            videoQuality: 'high',
+            durationLimit: 60,
+            cameraType: 'front',
+        };
+
+        launchCamera(options, (response) => {
+            if (response.didCancel) {
+                console.log('User cancelled camera');
                 return;
             }
-
-            setIsUploadingVideo(true);
-            try {
-                const formData = new FormData();
-                formData.append('video', {
-                    uri: asset.uri,
-                    name: asset.fileName,
-                    type: asset.type,
-                });
-
-                const response = await uploadIntroVideo(formData);
-                
-                Alert.alert("Success", "Your profile video has been uploaded!");
-
-                if (response.data && response.data.videoUrl) {
-                    setVideoUrl(response.data.videoUrl);
-                } else {
-                    getMyProfile().then(res => setVideoUrl(res.data.videoUrl || null));
-                }
-
-            } catch (error) {
-                console.error("Video upload failed:", error);
-                Alert.alert("Upload Failed", "Could not upload your video. Please try again.");
-            } finally {
-                setIsUploadingVideo(false);
+            if (response.errorCode) {
+                console.log('Camera Error: ', response.errorMessage);
+                Alert.alert('Error', 'Could not record video. Please try again.');
+                return;
+            }
+            if (response.assets && response.assets[0]) {
+                processVideo(response.assets[0]);
             }
         });
+    };
+
+    const handleSelectVideoFromGallery = () => {
+        const options: ImageLibraryOptions = {
+            mediaType: 'video',
+            videoQuality: 'high',
+            includeBase64: false,
+            selectionLimit: 1,
+        };
+
+        launchImageLibrary(options, (response) => {
+            if (response.didCancel) {
+                console.log('User cancelled video picker');
+                return;
+            }
+            if (response.errorCode) {
+                console.log('VideoPicker Error: ', response.errorMessage);
+                Alert.alert('Error', 'Could not select video. Please try again.');
+                return;
+            }
+            if (response.assets && response.assets[0]) {
+                processVideo(response.assets[0]);
+            }
+        });
+    };
+
+    const showVideoOptions = () => {
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                {
+                    options: ['Cancel', 'Record Video', 'Choose from Gallery'],
+                    cancelButtonIndex: 0,
+                },
+                (buttonIndex) => {
+                    if (buttonIndex === 1) {
+                        handleRecordVideo();
+                    } else if (buttonIndex === 2) {
+                        handleSelectVideoFromGallery();
+                    }
+                }
+            );
+        } else {
+            // For Android, use Alert
+            Alert.alert(
+                'Upload Profile Video',
+                'Choose an option',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Record Video', onPress: handleRecordVideo },
+                    { text: 'Choose from Gallery', onPress: handleSelectVideoFromGallery },
+                ],
+                { cancelable: true }
+            );
+        }
     };
 
     const handleSaveChanges = async () => {
@@ -210,7 +291,11 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
 
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>Media</Text>
-                    <TouchableOpacity style={styles.uploadButton} onPress={handleChooseVideo} disabled={isUploadingVideo}>
+                    <TouchableOpacity 
+                        style={styles.uploadButton} 
+                        onPress={showVideoOptions} 
+                        disabled={isUploadingVideo}
+                    >
                         {isUploadingVideo ? (
                             <ActivityIndicator color="#6366F1" />
                         ) : (
@@ -222,7 +307,10 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
                     </TouchableOpacity>
                     {videoUrl && !isUploadingVideo && (
                         <View style={styles.videoPreview}>
-                            <Text style={styles.videoPreviewText}>A video has been uploaded.</Text>
+                            <Text style={styles.videoPreviewText}>✓ Video uploaded successfully</Text>
+                            <TouchableOpacity onPress={showVideoOptions}>
+                                <Text style={styles.replaceVideoText}>Replace Video</Text>
+                            </TouchableOpacity>
                         </View>
                     )}
                 </View>
@@ -380,8 +468,15 @@ const styles = StyleSheet.create({
     },
     videoPreviewText: {
         fontSize: 14,
-        color: '#4B5563',
-        fontStyle: 'italic'
+        color: '#10B981',
+        fontWeight: '500',
+        marginBottom: 8,
+    },
+    replaceVideoText: {
+        fontSize: 14,
+        color: '#6366F1',
+        fontWeight: '600',
+        textDecorationLine: 'underline',
     }
 });
 
