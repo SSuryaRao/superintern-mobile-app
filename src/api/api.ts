@@ -231,9 +231,11 @@ export const sendMessage = (chatId: string, content: string) => {
   return api.post(`/chat/${chatId}/messages`, { content });
 };
 
+// ADD THIS FUNCTION
 export const getAdminsForChat = () => {
   return api.get('/chat/users/admins');
 };
+
 
 // --- Requirements ---
 export const submitRequirement = (requirementData: any) => {

@@ -1,0 +1,69 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffd4c5cb305, pid=6948, tid=5128
+#
+# JRE version: Java(TM) SE Runtime Environment (21.0.2+13) (build 21.0.2+13-LTS-58)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (21.0.2+13-LTS-58, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# Problematic frame:
+# V  [jvm.dll+0x31b305]
+#
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+# If you would like to submit a bug report, please visit:
+#   https://bugreport.java.com/bugreport/crash.jsp
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED -XX:MaxMetaspaceSize=512m -Xmx2048m -Dfile.encoding=UTF-8 -Duser.country=IN -Duser.language=en -Duser.variant -javaagent:C:\Users\minat\.gradle\wrapper\dists\gradle-8.14.3-bin\cv11ve7ro1n3o1j4so8xd9n66\gradle-8.14.3\lib\agents\gradle-instrumentation-agent-8.14.3.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 8.14.3
+
+Host: Intel(R) Core(TM) i3-10100 CPU @ 3.60GHz, 8 cores, 23G,  Windows 11 , 64 bit Build 26100 (10.0.26100.5733)
+Time: Wed Aug 27 20:05:53 2025 India Standard Time elapsed time: 1557.292717 seconds (0d 0h 25m 57s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x0000025def0b4b40):  WorkerThread "G1 Conc#1"      [id=5128, stack(0x0000006c05e00000,0x0000006c05f00000) (1024K)]
+
+Stack: [0x0000006c05e00000,0x0000006c05f00000],  sp=0x0000006c05eff6b0,  free space=1021k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x31b305]
+V  [jvm.dll+0x31b19f]
+V  [jvm.dll+0x31a31d]
+V  [jvm.dll+0x33772c]
+V  [jvm.dll+0x33636f]
+V  [jvm.dll+0x332b71]
+V  [jvm.dll+0x33471c]
+V  [jvm.dll+0x333449]
+V  [jvm.dll+0x336ec6]
+V  [jvm.dll+0x883eb7]
+V  [jvm.dll+0x7ff568]
+V  [jvm.dll+0x6c953d]
+C  [ucrtbase.dll+0x37b0]
+C  [KERNEL32.DLL+0x2e8d7]
+C  [ntdll.dll+0x8d9c]
+
+
+siginfo: EXCEPTION_ACCESS_VIOLATION (0xc0000005), reading address 0x00000265b25ca500
+
+
+Registers:
+RAX=0x0000025db25ce500, RBX=0x0000025db260e9a0, RCX=0x0000000000000014, RDX=0x0000000000000000
+RSP=0x0000006c05eff6b0, RBP=0x0000000000000000, RSI=0x0000025db25fa3f0, RDI=0x0000000000000009
+R8 =0x0000000000000009, R9 =0x00000000fffff800, R10=0x0000025db25b1b90, R11=0x0000000000000003
+R12=0x0000000000000000, R13=0xaaaaaaaaaaaaaaab, R14=0x0000000000000001, R15=0x0000006c05eff850
+RIP=0x00007ffd4c5cb305, EFLAGS=0x0000000000010a06
+
+
+Register to memory mapping:
+
+RAX=0x0000025db25ce500 points into unknown readable memory: 0x0000025db262cc10 | 10 cc 62 b2 5d 02 00 00
+RBX=0x0000025db260e9a0 points into unknown readable memory: 0x00007ffd4cc829a8 | a8 29 c8 4c fd 7f 00 00
+RCX=0x0000000000000014 is an unknown value
+RDX=0x0 is null
+RSP=0x0000006c05eff6b0 points into unknown readable memory: 0x0000006c05eff890 | 90 f8 ef 05 6c 00 00 00
+RBP=0x0 is null
+RSI=0x0000025db25fa3f0 points into unknown readable memory: 0x0000025db260ace0 | e0 ac 60 b2 5d 02 00 00
+RDI=0x0000000000000009 is an unknown value
+R8 =0x0000000000000009 is an unknown value
+R9 =

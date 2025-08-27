@@ -2,7 +2,7 @@
 
 buildscript {
     ext {
-        buildToolsVersion = "36.0.0"
+       buildToolsVersion = "36.0.0"
         minSdkVersion = 24
         compileSdkVersion = 36
         targetSdkVersion = 36
@@ -14,12 +14,22 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
+        classpath("com.android.tools.build:gradle:8.4.1")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
-        // ADD THIS LINE FOR FIREBASE
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath 'com.google.gms:google-services:4.4.1'
     }
 }
+
+// --- ADD THIS ENTIRE BLOCK AT THE END OF THE FILE ---
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+        }
+    }
+}
+// --- END OF NEW BLOCK ---
 
 apply plugin: "com.facebook.react.rootproject"
