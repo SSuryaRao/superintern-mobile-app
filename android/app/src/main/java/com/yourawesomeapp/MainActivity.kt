@@ -2,20 +2,22 @@
 
 package com.yourawesomeapp
 
-import android.os.Bundle // Import this
+import android.os.Bundle
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
-import org.devio.rn.splashscreen.SplashScreen // Import this
+// The import for org.devio.rn.splashscreen.SplashScreen has been removed.
 
 class MainActivity : ReactActivity() {
 
   /**
-   * Add the onCreate method to show the splash screen.
+   * The onCreate method no longer calls SplashScreen.show().
+   * The splash screen is now handled entirely by the Android theme,
+   * which is the correct and more efficient method.
    */
   override fun onCreate(savedInstanceState: Bundle?) {
-    SplashScreen.show(this) // Add this line
+    // The line "SplashScreen.show(this)" has been removed.
     super.onCreate(savedInstanceState)
   }
 

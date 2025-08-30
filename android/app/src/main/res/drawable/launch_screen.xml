@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android"
+    android:opacity="opaque">
+
+    <!-- Layer 1: The solid white background -->
+    <item android:drawable="@color/primary_dark" />
+
+    <!-- Layer 2: Your logo, constrained to a smaller size -->
+    <item
+        android:width="140dp"
+        android:height="140dp"
+        android:gravity="center">
+        <bitmap
+            android:gravity="fill"
+            android:src="@drawable/splash_logo" />
+    </item>
+
+</layer-list>
