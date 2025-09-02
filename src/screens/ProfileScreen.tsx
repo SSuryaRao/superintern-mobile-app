@@ -19,6 +19,8 @@ import auth from '@react-native-firebase/auth';
 import { SvgXml } from 'react-native-svg';
 import { launchImageLibrary, launchCamera, ImageLibraryOptions, Asset, CameraOptions } from 'react-native-image-picker';
 import { getMyProfile, updateMyProfile, uploadIntroVideo } from '../api/api';
+// --- NEW: Import permission handling functions ---
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 const userIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
 const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81 .7A2 2 0 0 1 22 16.92z"></path></svg>`;
@@ -26,7 +28,6 @@ const githubIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="2
 const locationIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
 const skillsIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
 const uploadIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
-const cameraIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
 
 type IconTextInputProps = TextInputProps & {
     icon: string;
@@ -83,32 +84,23 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         fetchProfile();
     }, []);
 
-    const handleChooseMedia = (mediaType: 'photo' | 'video', callback: (asset: Asset) => void) => {
-        const options: ImageLibraryOptions = {
-            mediaType,
-            quality: 1,
-            durationLimit: 60,
-        } as any;
-
-        launchImageLibrary(options, (response) => {
-            if (response.didCancel) {
-                console.log('User cancelled media picker');
-                return;
-            };
-            if (response.errorCode) {
-                console.log('ImagePicker Error: ', response.errorMessage);
-                Alert.alert('Error', `Could not select ${mediaType}. Please try again.`);
-                return;
-            }
-            if (response.assets && response.assets[0]) {
-                callback(response.assets[0]);
-            }
-        });
+    // --- NEW: Function to request permissions ---
+    const requestPermission = async (permission: any) => {
+        const result = await request(permission);
+        return result === RESULTS.GRANTED;
     };
 
     const handleChooseAvatar = () => {
-        handleChooseMedia('photo', (asset) => {
-            setAvatarUri(asset.uri || null);
+        const options: ImageLibraryOptions = { mediaType: 'photo', quality: 1 };
+        launchImageLibrary(options, (response) => {
+            if (response.didCancel) return;
+            if (response.errorCode) {
+                Alert.alert('Error', `Could not select photo. Please try again.`);
+                return;
+            }
+            if (response.assets && response.assets[0]) {
+                setAvatarUri(response.assets[0].uri || null);
+            }
         });
     };
 
@@ -117,29 +109,22 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             Alert.alert("Error", "Selected video file is invalid.");
             return;
         }
-
         setIsUploadingVideo(true);
         try {
             const formData = new FormData();
-            
-            // Fix for React Native FormData - use proper structure
             formData.append('video', {
                 uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
                 type: asset.type || 'video/mp4',
                 name: asset.fileName || `video_${Date.now()}.mp4`,
             } as any);
-
             const response = await uploadIntroVideo(formData);
-            
             Alert.alert("Success", "Your profile video has been uploaded!");
-
             if (response.data && response.data.videoUrl) {
                 setVideoUrl(response.data.videoUrl);
             } else {
                 const profileResponse = await getMyProfile();
                 setVideoUrl(profileResponse.data.videoUrl || null);
             }
-
         } catch (error) {
             console.error("Video upload failed:", error);
             Alert.alert("Upload Failed", "Could not upload your video. Please try again.");
@@ -148,21 +133,19 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         }
     };
 
-    const handleRecordVideo = () => {
-        const options: CameraOptions = {
-            mediaType: 'video',
-            videoQuality: 'high',
-            durationLimit: 60,
-            cameraType: 'front',
-        };
+    // --- MODIFIED: Added permission check ---
+    const handleRecordVideo = async () => {
+        const cameraPermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA;
+        const hasPermission = await requestPermission(cameraPermission);
+        if (!hasPermission) {
+            Alert.alert("Permission Denied", "Camera access is required to record a video.");
+            return;
+        }
 
+        const options: CameraOptions = { mediaType: 'video', videoQuality: 'high', durationLimit: 60, cameraType: 'front' };
         launchCamera(options, (response) => {
-            if (response.didCancel) {
-                console.log('User cancelled camera');
-                return;
-            }
+            if (response.didCancel) return;
             if (response.errorCode) {
-                console.log('Camera Error: ', response.errorMessage);
                 Alert.alert('Error', 'Could not record video. Please try again.');
                 return;
             }
@@ -172,21 +155,19 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         });
     };
 
-    const handleSelectVideoFromGallery = () => {
-        const options: ImageLibraryOptions = {
-            mediaType: 'video',
-            videoQuality: 'high',
-            includeBase64: false,
-            selectionLimit: 1,
-        };
-
+    // --- MODIFIED: Added permission check ---
+    const handleSelectVideoFromGallery = async () => {
+        const galleryPermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.PHOTO_LIBRARY : PERMISSIONS.ANDROID.READ_MEDIA_VIDEO;
+        const hasPermission = await requestPermission(galleryPermission);
+        if (!hasPermission) {
+            Alert.alert("Permission Denied", "Photo Library access is required to select a video.");
+            return;
+        }
+        
+        const options: ImageLibraryOptions = { mediaType: 'video', videoQuality: 'high' };
         launchImageLibrary(options, (response) => {
-            if (response.didCancel) {
-                console.log('User cancelled video picker');
-                return;
-            }
+            if (response.didCancel) return;
             if (response.errorCode) {
-                console.log('VideoPicker Error: ', response.errorMessage);
                 Alert.alert('Error', 'Could not select video. Please try again.');
                 return;
             }
@@ -199,23 +180,15 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     const showVideoOptions = () => {
         if (Platform.OS === 'ios') {
             ActionSheetIOS.showActionSheetWithOptions(
-                {
-                    options: ['Cancel', 'Record Video', 'Choose from Gallery'],
-                    cancelButtonIndex: 0,
-                },
+                { options: ['Cancel', 'Record Video', 'Choose from Gallery'], cancelButtonIndex: 0 },
                 (buttonIndex) => {
-                    if (buttonIndex === 1) {
-                        handleRecordVideo();
-                    } else if (buttonIndex === 2) {
-                        handleSelectVideoFromGallery();
-                    }
+                    if (buttonIndex === 1) handleRecordVideo();
+                    else if (buttonIndex === 2) handleSelectVideoFromGallery();
                 }
             );
         } else {
-            // For Android, use Alert
             Alert.alert(
-                'Upload Profile Video',
-                'Choose an option',
+                'Upload Profile Video', 'Choose an option',
                 [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Record Video', onPress: handleRecordVideo },
@@ -281,9 +254,6 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
                                <Text style={styles.avatarText}>{getInitials()}</Text>
                             </View>
                         )}
-                        {/* <View style={styles.avatarEditButton}>             //Camera Icon Button
-                            <SvgXml xml={cameraIcon} />
-                        </View> */}
                     </TouchableOpacity>
                     <Text style={styles.profileName}>{fullName || 'Your Name'}</Text>
                     <Text style={styles.profileEmail}>{user?.email}</Text>
@@ -370,16 +340,6 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 32,
         fontWeight: 'bold',
-    },
-    avatarEditButton: {
-        position: 'absolute',
-        bottom: 15,
-        right: 0,
-        backgroundColor: '#4F46E5',
-        padding: 8,
-        borderRadius: 20,
-        borderWidth: 2,
-        borderColor: '#FFFFFF'
     },
     profileName: {
         fontSize: 22,

@@ -41,13 +41,12 @@ interface UserProfile {
     rank?: number;
 }
 
-// FIX: Made 'difficulty' optional to match the API response
 interface Task {
     _id: string;
     title: string;
     description: string;
     points: number;
-    difficulty?: 'Easy' | 'Medium' | 'Hard'; // This field is NOT sent by the backend, so it's now optional
+    difficulty?: 'Easy' | 'Medium' | 'Hard';
     status?: string;
     deadline?: string;
 }
@@ -68,11 +67,11 @@ const DashboardScreen = () => {
     const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
     const [leaderboardPosition, setLeaderboardPosition] = useState<number>(0);
     const [applyingTaskId, setApplyingTaskId] = useState<string | null>(null);
+    const [showAllTasks, setShowAllTasks] = useState(false); // New state to toggle tasks visibility
 
     useEffect(() => {
         fetchDashboardData();
         
-        // Animate on mount
         Animated.stagger(150, [
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -88,7 +87,6 @@ const DashboardScreen = () => {
     }, []);
 
     useEffect(() => {
-        // Animate progress bar when profile updates
         if (userProfile) {
             const progress = calculateProgress();
             Animated.timing(progressAnim, {
@@ -103,7 +101,6 @@ const DashboardScreen = () => {
         try {
             setLoading(true);
             
-            // Fetch all data in parallel
             const [profileRes, tasksRes, assignedRes, leaderboardRes] = await Promise.all([
                 getMyProfile(),
                 getAvailableTasks(),
@@ -111,22 +108,18 @@ const DashboardScreen = () => {
                 getLeaderboard()
             ]);
 
-            // Set user profile
             if (profileRes.data) {
                 setUserProfile(profileRes.data);
             }
 
-            // Set available tasks (limit to 3 for dashboard)
             if (tasksRes.data && Array.isArray(tasksRes.data)) {
-                setAvailableTasks(tasksRes.data.slice(0, 3));
+                setAvailableTasks(tasksRes.data);
             }
 
-            // Set assigned tasks
             if (assignedRes.data && Array.isArray(assignedRes.data)) {
                 setAssignedTasks(assignedRes.data);
             }
 
-            // Find user's position in leaderboard
             if (leaderboardRes.data && Array.isArray(leaderboardRes.data)) {
                 const userPosition = leaderboardRes.data.findIndex(
                     (u: any) => u.email === user?.email
@@ -136,7 +129,6 @@ const DashboardScreen = () => {
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            // Don't show error on first load, just use default values
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -155,7 +147,6 @@ const DashboardScreen = () => {
             
             if (response.data) {
                 Alert.alert('Success', 'You have successfully applied for this task!');
-                // Refresh the tasks list
                 fetchDashboardData();
             }
         } catch (error: any) {
@@ -169,7 +160,6 @@ const DashboardScreen = () => {
 
     const calculateProgress = () => {
         if (!userProfile) return 0;
-        // Calculate progress based on tasks completed (assuming 10 tasks = 100%)
         return Math.min((userProfile.tasksCompleted / 10) * 100, 100);
     };
 
@@ -192,7 +182,6 @@ const DashboardScreen = () => {
         outputRange: ['0%', '100%'],
     });
 
-    // FIX: Provide a default value for difficulty if it's missing
     const getDifficultyColor = (difficulty: string = 'Easy') => {
         switch (difficulty) {
             case 'Easy': return '#10B981';
@@ -269,19 +258,20 @@ const DashboardScreen = () => {
                 <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.cardTitle}>Available Tasks</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Tasks' as never)}>
-                            <Text style={styles.viewAllText}>View All</Text>
-                        </TouchableOpacity>
+                        {availableTasks.length > 2 && (
+                            <TouchableOpacity onPress={() => setShowAllTasks(!showAllTasks)}>
+                                <Text style={styles.viewAllText}>{showAllTasks ? 'Show Less' : 'View All'}</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                     
                     {availableTasks.length > 0 ? (
-                        availableTasks.map((task) => (
+                        (showAllTasks ? availableTasks : availableTasks.slice(0, 2)).map((task) => (
                             <View key={task._id} style={styles.taskItem}>
                                 <View style={styles.taskInfo}>
                                     <Text style={styles.taskTitle}>{task.title}</Text>
                                     <View style={styles.taskMeta}>
                                         <Text style={styles.taskPoints}>⭐ {task.points} pts</Text>
-                                        {/* FIX: Use a default value for difficulty */}
                                         <View style={[styles.difficultyBadge, { backgroundColor: `${getDifficultyColor(task.difficulty)}20` }]}>
                                             <Text style={[styles.difficultyText, { color: getDifficultyColor(task.difficulty) }]}>
                                                 {task.difficulty || 'Easy'}
@@ -384,7 +374,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#1F2937',
-        marginBottom: 20,
     },
     sectionHeader: {
         flexDirection: 'row',
