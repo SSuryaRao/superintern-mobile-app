@@ -1,29 +1,24 @@
 import axios from 'axios';
 import { getAuth } from '@react-native-firebase/auth';
 
-// Replace with your actual API base URL from Postman variables if needed
 const API_BASE_URL = 'https://superintern-local.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 second timeout
+  timeout: 30000,
 });
 
-// Add a request interceptor to include the Firebase token in the headers
 api.interceptors.request.use(
   async (config) => {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
 
-      // Only add the authentication token if a user is logged in AND
-      // the request is NOT for the public '/tasks/available' endpoint.
       if (user && config.url !== '/tasks/available') {
         const token = await user.getIdToken();
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      // Log requests in development for debugging
       if (__DEV__) {
         console.log('API Request:', config.method?.toUpperCase(), config.url);
       }
@@ -38,7 +33,6 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor for better error handling and logging
 api.interceptors.response.use(
   (response) => {
     if (__DEV__) {
@@ -52,15 +46,12 @@ api.interceptors.response.use(
       console.error('API Error:', error.response?.status, error.response?.data || error.message);
     }
     
-    // Handle 401 Unauthorized - token might be expired
     if (error.response?.status === 401) {
       const auth = getAuth();
       const user = auth.currentUser;
       if (user) {
         try {
-          // Force token refresh
           await user.getIdToken(true);
-          // Retry the original request
           const originalRequest = error.config;
           const newToken = await user.getIdToken();
           if (originalRequest.headers) {
@@ -76,6 +67,11 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// --- Server Health ---
+export const pingServer = () => {
+  return api.get('/tasks/available');
+};
 
 // --- Authentication ---
 export const loginOrRegister = (referralCode?: string) => {
@@ -113,10 +109,7 @@ export const deleteCV = () => {
   return api.delete('/users/delete-cv');
 };
 
-// Replace the old uploadIntroVideo function with this one
-
 export const uploadIntroVideo = (formData: FormData) => {
-  // The 'headers' object has been removed to let Axios set it automatically
   return api.post('/users/upload-video', formData); 
 };
 
@@ -134,7 +127,7 @@ export const getTaskById = (taskId: string) => {
 };
 
 export const applyForTask = (taskId: string) => {
-  return api.post(`/tasks/${taskId}/apply`);
+  return api.post(`/tasks/${taskId}/apply`, {});
 };
 
 export const getMyApplications = () => {
@@ -231,17 +224,14 @@ export const sendMessage = (chatId: string, content: string) => {
   return api.post(`/chat/${chatId}/messages`, { content });
 };
 
-// ADD THIS FUNCTION
 export const getAdminsForChat = () => {
   return api.get('/chat/users/admins');
 };
-
 
 // --- Requirements ---
 export const submitRequirement = (requirementData: any) => {
   return api.post('/requirements', requirementData);
 };
-
 // --- Admin Functions ---
 
 // USERS (Admin)

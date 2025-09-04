@@ -3,16 +3,16 @@
     android:opacity="opaque">
 
     <!-- Layer 1: The solid white background -->
-    <item android:drawable="@color/primary_dark" />
+    <item android:drawable="@color/white" />
 
     <!-- Layer 2: Your logo, constrained to a smaller size -->
     <item
-        android:width="140dp"
-        android:height="140dp"
+        android:width="300dp"
+        android:height="300dp"
         android:gravity="center">
         <bitmap
             android:gravity="fill"
-            android:src="@drawable/splash_logo" />
+            android:src="@drawable/splash_logo3" />
     </item>
 
 </layer-list>

@@ -1,0 +1,1471 @@
+{
+  "info": {
+    "name": "superintern",
+    "description": "Complete API collection for SuperIntern platform with Authentication, Users, Tasks, Jobs, Chat, Referrals, and Admin functions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "superintern-api-collection-v2"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string",
+      "description": "Base URL for the API server"
+    },
+    {
+      "key": "api_base",
+      "value": "{{base_url}}/api",
+      "type": "string",
+      "description": "API base URL"
+    },
+    {
+      "key": "firebase_token",
+      "value": "",
+      "type": "string",
+      "description": "Firebase authentication token - Set this after login"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string",
+      "description": "Task ID for task-specific operations"
+    },
+    {
+      "key": "job_id",
+      "value": "",
+      "type": "string",
+      "description": "Job ID for job-specific operations"
+    },
+    {
+      "key": "application_id",
+      "value": "",
+      "type": "string",
+      "description": "Application ID for application-specific operations"
+    },
+    {
+      "key": "chat_id",
+      "value": "",
+      "type": "string",
+      "description": "Chat ID for chat-specific operations"
+    },
+    {
+      "key": "referral_code",
+      "value": "",
+      "type": "string",
+      "description": "Referral code for referral operations"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{firebase_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Authentication endpoints for user login and registration",
+      "item": [
+        {
+          "name": "Login/Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referralCode\": \"REF123ABC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/auth/login",
+              "host": ["{{api_base}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login existing user or register new user with optional referral code. Requires Firebase token in Authorization header."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/auth/users/me",
+              "host": ["{{api_base}}"],
+              "path": ["auth", "users", "me"]
+            },
+            "description": "Get current authenticated user details from Firebase token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users/me",
+              "host": ["{{api_base}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Get current user's complete profile information"
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"phone\": \"+1234567890\",\n  \"skills\": [\"React\", \"Node.js\", \"Python\", \"MongoDB\"],\n  \"experience\": \"2 years\",\n  \"education\": \"Bachelor's in Computer Science\",\n  \"location\": \"New York, NY\",\n  \"bio\": \"Passionate full-stack developer\",\n  \"linkedin\": \"https://linkedin.com/in/johndoe\",\n  \"github\": \"https://github.com/johndoe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/users/me",
+              "host": ["{{api_base}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Update current user's profile information"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/users/leaderboard",
+              "host": ["{{api_base}}"],
+              "path": ["users", "leaderboard"]
+            },
+            "description": "Get top 10 users by points - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload CV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "cv",
+                  "type": "file",
+                  "src": [],
+                  "description": "PDF, DOC, DOCX file (max 5MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/users/upload-cv",
+              "host": ["{{api_base}}"],
+              "path": ["users", "upload-cv"]
+            },
+            "description": "Upload CV file in PDF, DOC, or DOCX format (max 5MB)"
+          },
+          "response": []
+        },
+        {
+          "name": "Download CV",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users/download-cv",
+              "host": ["{{api_base}}"],
+              "path": ["users", "download-cv"]
+            },
+            "description": "Get CV download URL for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete CV",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users/delete-cv",
+              "host": ["{{api_base}}"],
+              "path": ["users", "delete-cv"]
+            },
+            "description": "Delete user's CV from the platform"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Intro Video",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": [],
+                  "description": "Video file (max 20MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/users/upload-video",
+              "host": ["{{api_base}}"],
+              "path": ["users", "upload-video"]
+            },
+            "description": "Upload intro video for profile (max 20MB)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Intro Video",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users/delete-video",
+              "host": ["{{api_base}}"],
+              "path": ["users", "delete-video"]
+            },
+            "description": "Delete user's intro video"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users",
+              "host": ["{{api_base}}"],
+              "path": ["users"]
+            },
+            "description": "Get all users - Admin only"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "description": "Task management endpoints",
+      "item": [
+        {
+          "name": "Get Available Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/tasks/available",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "available"]
+            },
+            "description": "Get all available tasks for interns - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Task",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}"]
+            },
+            "description": "Get single task details by ID - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Apply for Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}/apply",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}", "apply"]
+            },
+            "description": "Apply for a specific task"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/my-applications",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "my-applications"]
+            },
+            "description": "Get all task applications for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Assigned Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/my",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "my"]
+            },
+            "description": "Get tasks assigned to current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Code Link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codeLink\": \"https://github.com/username/project-repo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}/submit-code-link",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}", "submit-code-link"]
+            },
+            "description": "Submit GitHub/code repository link for task completion"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Video Link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"videoLink\": \"https://youtube.com/watch?v=abc123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}/submit-video-link",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}", "submit-video-link"]
+            },
+            "description": "Submit video demonstration link (YouTube, Vimeo, etc.)"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Video File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "submissionVideo",
+                  "type": "file",
+                  "src": [],
+                  "description": "Video file (max 20MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}/submit-video",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}", "submit-video"]
+            },
+            "description": "Upload video file for task submission (max 20MB)"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}/complete",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}", "complete"]
+            },
+            "description": "Mark task as completed by the assigned user"
+          },
+          "response": []
+        },
+        {
+          "name": "Withdraw Application",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}/application",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}", "application"]
+            },
+            "description": "Withdraw application for a specific task"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Task (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Build a Todo App with React\",\n  \"description\": \"Create a fully functional todo application using React with add, edit, delete, and mark complete functionality.\",\n  \"points\": 50,\n  \"isPaid\": false,\n  \"domain\": \"Frontend Development\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/tasks",
+              "host": ["{{api_base}}"],
+              "path": ["tasks"]
+            },
+            "description": "Create new task - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Tasks (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks",
+              "host": ["{{api_base}}"],
+              "path": ["tasks"]
+            },
+            "description": "Get all tasks with assignees and applicants - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Applications (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/applications",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "applications"]
+            },
+            "description": "Get all task applications - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Application (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/applications/{{application_id}}/approve",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "applications", "{{application_id}}", "approve"]
+            },
+            "description": "Approve task application - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Application (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminMessage\": \"The application doesn't meet the required skill level for this task.\",\n  \"reapplyBlocked\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/tasks/applications/{{application_id}}/reject",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "applications", "{{application_id}}", "reject"]
+            },
+            "description": "Reject task application with optional message - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Task (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Build an Advanced Todo App with React and Redux\",\n  \"description\": \"Create a fully functional todo application using React and Redux with advanced features.\",\n  \"points\": 75,\n  \"isPaid\": true,\n  \"status\": \"open\",\n  \"domain\": \"Frontend Development\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}"]
+            },
+            "description": "Update existing task - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Task (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/tasks/{{task_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["tasks", "{{task_id}}"]
+            },
+            "description": "Delete task permanently - Admin only"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "description": "Job posting and management endpoints",
+      "item": [
+        {
+          "name": "Get All Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/jobs?limit=10&page=1&type=fulltime&isRemote=true&location=mumbai&companyName=google&source=manual",
+              "host": ["{{api_base}}"],
+              "path": ["jobs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of jobs per page"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "type",
+                  "value": "fulltime",
+                  "description": "fulltime|part time|internship"
+                },
+                {
+                  "key": "isRemote",
+                  "value": "true",
+                  "description": "true|false"
+                },
+                {
+                  "key": "location",
+                  "value": "mumbai",
+                  "description": "Location filter"
+                },
+                {
+                  "key": "companyName",
+                  "value": "google",
+                  "description": "Company name filter"
+                },
+                {
+                  "key": "source",
+                  "value": "manual",
+                  "description": "manual|google_sheet"
+                }
+              ]
+            },
+            "description": "Get all jobs with filtering and pagination - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Job",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/jobs/{{job_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["jobs", "{{job_id}}"]
+            },
+            "description": "Get single job details by ID - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Job Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/jobs/stats/overview",
+              "host": ["{{api_base}}"],
+              "path": ["jobs", "stats", "overview"]
+            },
+            "description": "Get job statistics and overview - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Job (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"TechCorp Solutions\",\n  \"description\": \"Looking for a full-stack developer to join our growing team. Experience with React and Node.js required.\",\n  \"post\": \"Full Stack Developer\",\n  \"location\": \"San Francisco, CA\",\n  \"isRemote\": true,\n  \"type\": \"fulltime\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/jobs",
+              "host": ["{{api_base}}"],
+              "path": ["jobs"]
+            },
+            "description": "Create new job posting - Admin only"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Job Applications",
+      "description": "Job application management endpoints",
+      "item": [
+        {
+          "name": "Apply for Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": \"64f7a123b456c789d012e345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/job-applications",
+              "host": ["{{api_base}}"],
+              "path": ["job-applications"]
+            },
+            "description": "Apply for a specific job posting"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Job Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/job-applications/my",
+              "host": ["{{api_base}}"],
+              "path": ["job-applications", "my"]
+            },
+            "description": "Get all job applications for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Applications (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/job-applications",
+              "host": ["{{api_base}}"],
+              "path": ["job-applications"]
+            },
+            "description": "Get all job applications - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Application Status (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"reviewed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/job-applications/{{application_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["job-applications", "{{application_id}}"]
+            },
+            "description": "Update job application status - Admin only"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Referrals",
+      "description": "Referral system endpoints",
+      "item": [
+        {
+          "name": "Generate Referral Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/referrals/generate",
+              "host": ["{{api_base}}"],
+              "path": ["referrals", "generate"]
+            },
+            "description": "Generate or get existing referral code for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Referral Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/referrals/stats",
+              "host": ["{{api_base}}"],
+              "path": ["referrals", "stats"]
+            },
+            "description": "Get referral statistics for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Referral Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/referrals/validate/{{referral_code}}",
+              "host": ["{{api_base}}"],
+              "path": ["referrals", "validate", "{{referral_code}}"]
+            },
+            "description": "Validate referral code during signup - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Track Referral Click",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/referrals/click/{{referral_code}}",
+              "host": ["{{api_base}}"],
+              "path": ["referrals", "click", "{{referral_code}}"]
+            },
+            "description": "Track referral link click - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Bonus Eligibility",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/referrals/check-bonus",
+              "host": ["{{api_base}}"],
+              "path": ["referrals", "check-bonus"]
+            },
+            "description": "Check if user can claim referral bonus"
+          },
+          "response": []
+        },
+        {
+          "name": "Claim Referral Bonus",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/referrals/claim-bonus",
+              "host": ["{{api_base}}"],
+              "path": ["referrals", "claim-bonus"]
+            },
+            "description": "Claim referral bonus after completing first task"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Referrals (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/referrals/all",
+              "host": ["{{api_base}}"],
+              "path": ["referrals", "all"]
+            },
+            "description": "Get all referral data - Admin only"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "description": "Chat system endpoints",
+      "item": [
+        {
+          "name": "Get All Chats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/chat",
+              "host": ["{{api_base}}"],
+              "path": ["chat"]
+            },
+            "description": "Get all chats for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Start/Get Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"participantId\": \"64f7a123b456c789d012e345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/chat/start",
+              "host": ["{{api_base}}"],
+              "path": ["chat", "start"]
+            },
+            "description": "Start new chat or get existing chat between two users"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/chat/{{chat_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["chat", "{{chat_id}}"]
+            },
+            "description": "Get all messages in a specific chat"
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hello! I have a question about the task requirements.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/chat/{{chat_id}}/messages",
+              "host": ["{{api_base}}"],
+              "path": ["chat", "{{chat_id}}", "messages"]
+            },
+            "description": "Send message to a specific chat"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admins for Chat",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/chat/users/admins",
+              "host": ["{{api_base}}"],
+              "path": ["chat", "users", "admins"]
+            },
+            "description": "Get list of admins available for chat"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users for Admin Chat (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/chat/users/admin",
+              "host": ["{{api_base}}"],
+              "path": ["chat", "users", "admin"]
+            },
+            "description": "Get all users for admin chat - Admin only"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Requirements",
+      "description": "Corporate requirement submission endpoints",
+      "item": [
+        {
+          "name": "Submit Requirement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company\": \"ABC Corporation\",\n  \"email\": \"hr@abccorp.com\",\n  \"positions\": \"Frontend Developer, Backend Developer, Data Analyst\",\n  \"requirements\": \"We need skilled developers with 2+ years experience in React, Node.js, and Python for our upcoming projects.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{api_base}}/requirements",
+              "host": ["{{api_base}}"],
+              "path": ["requirements"]
+            },
+            "description": "Submit corporate requirement form - Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Requirements (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/requirements",
+              "host": ["{{api_base}}"],
+              "path": ["requirements"]
+            },
+            "description": "Get all submitted requirements - Admin only"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics (Admin)",
+      "description": "Analytics and reporting endpoints",
+      "item": [
+        {
+          "name": "Get Current Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/analytics/current",
+              "host": ["{{api_base}}"],
+              "path": ["analytics", "current"]
+            },
+            "description": "Get current analytics data - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Manual Analytics Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/analytics/sync",
+              "host": ["{{api_base}}"],
+              "path": ["analytics", "sync"]
+            },
+            "description": "Manually trigger analytics sync to Google Sheets - Admin only"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sync Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebase_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/analytics/status",
+              "host": ["{{api_base}}"],
+              "path": ["analytics", "status"]
+            },
+            "description": "Get sync status and last sync time - Admin only"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "// Log request details for debugging",
+          "console.log('Request URL:', pm.request.url.toString());",
+          "console.log('Request Method:', pm.request.method);",
+          "",
+          "// Automatically set Content-Type for POST/PUT requests with JSON body",
+          "if (['POST', 'PUT', 'PATCH'].includes(pm.request.method) && pm.request.body && pm.request.body.mode === 'raw') {",
+          "    pm.request.headers.add({",
+          "        key: 'Content-Type',",
+          "        value: 'application/json'",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "// Basic response validation",
+          "pm.test('Response status code is valid', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204, 400, 401, 403, 404, 422, 500]);",
+          "});",
+          "",
+          "// Log response for debugging",
+          "console.log('Response Status:', pm.response.status);",
+          "console.log('Response Time:', pm.response.responseTime + 'ms');",
+          "",
+          "// Auto-save certain response values as variables",
+          "if (pm.response.code === 200 || pm.response.code === 201) {",
+          "    try {",
+          "        const responseJson = pm.response.json();",
+          "        ",
+          "        // Auto-save user ID from auth responses",
+          "        if (responseJson.user && responseJson.user._id) {",
+          "            pm.collectionVariables.set('user_id', responseJson.user._id);",
+          "        }",
+          "        ",
+          "        // Auto-save task ID from task creation",
+          "        if (responseJson._id && pm.request.url.toString().includes('/tasks') && pm.request.method === 'POST') {",
+          "            pm.collectionVariables.set('task_id', responseJson._id);",
+          "        }",
+          "        ",
+          "        // Auto-save job ID from job creation",
+          "        if (responseJson._id && pm.request.url.toString().includes('/jobs') && pm.request.method === 'POST') {",
+          "            pm.collectionVariables.set('job_id', responseJson._id);",
+          "        }",
+          "        ",
+          "        // Auto-save chat ID from chat creation",
+          "        if (responseJson._id && pm.request.url.toString().includes('/chat')) {",
+          "            pm.collectionVariables.set('chat_id', responseJson._id);",
+          "        }",
+          "    } catch (e) {",
+          "        console.log('Could not parse response JSON');",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

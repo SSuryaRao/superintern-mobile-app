@@ -18,10 +18,74 @@ import {
 import auth from '@react-native-firebase/auth';
 import { SvgXml } from 'react-native-svg';
 import { launchImageLibrary, launchCamera, ImageLibraryOptions, Asset, CameraOptions } from 'react-native-image-picker';
-import { getMyProfile, updateMyProfile, uploadIntroVideo } from '../api/api';
-// --- NEW: Import permission handling functions ---
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import RNFS from 'react-native-fs';
+import axios from 'axios';
 
+// --- API CONFIGURATION (Integrated from your api.ts file) ---
+
+// Base URL for your API
+const API_BASE_URL = 'https://superintern-local.onrender.com/api';
+
+// Create an Axios instance for API requests
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000, // 30-second timeout
+});
+
+// Add a request interceptor to automatically include the Firebase auth token in headers
+api.interceptors.request.use(
+  async (config) => {
+    try {
+      const user = auth().currentUser;
+      // If a user is logged in, get their ID token
+      if (user) {
+        const token = await user.getIdToken();
+        // Set the Authorization header for the request
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    } catch (error) {
+      console.error('API Interceptor: Error getting auth token:', error);
+      // Let the request proceed without the token if an error occurs
+      return config;
+    }
+  },
+  (error) => {
+    // Handle request configuration errors
+    return Promise.reject(error);
+  }
+);
+
+
+// --- API FUNCTIONS (Integrated and now used by the component) ---
+
+/**
+ * Fetches the current user's profile data from the server.
+ */
+export const getMyProfile = () => {
+  return api.get('/users/me');
+};
+
+/**
+ * Updates the current user's profile data on the server.
+ * @param profileData - The profile data to update.
+ */
+export const updateMyProfile = (profileData: Partial<ProfileData>) => {
+  return api.put('/users/me', profileData);
+};
+
+/**
+ * Uploads a user's introductory video.
+ * @param formData - The FormData object containing the video file.
+ */
+export const uploadIntroVideo = (formData: FormData) => {
+  // Axios automatically sets the correct 'Content-Type' header for FormData
+  return api.post('/users/upload-video', formData);
+};
+
+
+// --- SVG ICONS (No changes) ---
 const userIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
 const phoneIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81 .7A2 2 0 0 1 22 16.92z"></path></svg>`;
 const githubIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>`;
@@ -29,10 +93,26 @@ const locationIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height=
 const skillsIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
 const uploadIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
 
+// --- TYPES AND INTERFACES (No changes) ---
 type IconTextInputProps = TextInputProps & {
     icon: string;
 };
 
+type ProfileData = {
+    name?: string;
+    phone?: string;
+    github?: string;
+    location?: string;
+    skills?: string[];
+    aboutMe?: string;
+    videoUrl?: string;
+};
+
+type ProfileScreenProps = {
+    navigation: any;
+};
+
+// --- HELPER COMPONENTS (No changes) ---
 const IconTextInput = ({ icon, ...props }: IconTextInputProps) => (
     <View style={styles.inputContainer}>
         <SvgXml xml={icon} />
@@ -40,17 +120,14 @@ const IconTextInput = ({ icon, ...props }: IconTextInputProps) => (
     </View>
 );
 
-type ProfileScreenProps = {
-    navigation: any;
-};
-
+// --- MAIN PROFILE SCREEN COMPONENT ---
 const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     const user = auth().currentUser;
 
+    // State variables
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [isUploadingVideo, setIsUploadingVideo] = useState(false);
-
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
     const [github, setGithub] = useState('');
@@ -60,9 +137,11 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
+    // Fetch profile data when the component mounts
     useEffect(() => {
         const fetchProfile = async () => {
             try {
+                // **INTEGRATION**: Using the real API function to fetch data
                 const response = await getMyProfile();
                 const profile = response.data;
                 if (profile) {
@@ -74,9 +153,10 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
                     setAboutMe(profile.aboutMe || '');
                     setVideoUrl(profile.videoUrl || null);
                 }
-            } catch (error) {
-                console.error("Failed to fetch profile:", error);
-                Alert.alert("Error", "Could not load your profile data.");
+            } catch (error: any) {
+                // **INTEGRATION**: Improved error logging
+                console.error("Failed to fetch profile:", error.response?.data || error.message);
+                Alert.alert("Error", "Could not load your profile data. Please try again later.");
             } finally {
                 setLoading(false);
             }
@@ -84,10 +164,14 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         fetchProfile();
     }, []);
 
-    // --- NEW: Function to request permissions ---
     const requestPermission = async (permission: any) => {
-        const result = await request(permission);
-        return result === RESULTS.GRANTED;
+        try {
+            const result = await request(permission);
+            return result === RESULTS.GRANTED;
+        } catch (error) {
+            console.error("Permission request failed: ", error);
+            return false;
+        }
     };
 
     const handleChooseAvatar = () => {
@@ -95,7 +179,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         launchImageLibrary(options, (response) => {
             if (response.didCancel) return;
             if (response.errorCode) {
-                Alert.alert('Error', `Could not select photo. Please try again.`);
+                Alert.alert('Error', `Could not select photo. ${response.errorMessage || 'Please try again.'}`);
                 return;
             }
             if (response.assets && response.assets[0]) {
@@ -110,30 +194,38 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             return;
         }
         setIsUploadingVideo(true);
+
         try {
+            let videoUri = asset.uri;
+            if (Platform.OS === 'android' && videoUri.startsWith('content://')) {
+                const destPath = `${RNFS.TemporaryDirectoryPath}/${asset.fileName || `temp_video_${Date.now()}.mp4`}`;
+                await RNFS.copyFile(videoUri, destPath);
+                videoUri = `file://${destPath}`;
+            }
+
             const formData = new FormData();
             formData.append('video', {
-                uri: Platform.OS === 'ios' ? asset.uri.replace('file://', '') : asset.uri,
+                uri: Platform.OS === 'ios' ? videoUri.replace('file://', '') : videoUri,
                 type: asset.type || 'video/mp4',
                 name: asset.fileName || `video_${Date.now()}.mp4`,
             } as any);
+            
+            // **INTEGRATION**: Using the real API function to upload the video
             const response = await uploadIntroVideo(formData);
             Alert.alert("Success", "Your profile video has been uploaded!");
+            
             if (response.data && response.data.videoUrl) {
                 setVideoUrl(response.data.videoUrl);
-            } else {
-                const profileResponse = await getMyProfile();
-                setVideoUrl(profileResponse.data.videoUrl || null);
             }
-        } catch (error) {
-            console.error("Video upload failed:", error);
+        } catch (error: any) {
+            // **INTEGRATION**: Improved error logging
+            console.error("Video upload failed:", error.response?.data || error.message);
             Alert.alert("Upload Failed", "Could not upload your video. Please try again.");
         } finally {
             setIsUploadingVideo(false);
         }
     };
 
-    // --- MODIFIED: Added permission check ---
     const handleRecordVideo = async () => {
         const cameraPermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA;
         const hasPermission = await requestPermission(cameraPermission);
@@ -146,7 +238,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         launchCamera(options, (response) => {
             if (response.didCancel) return;
             if (response.errorCode) {
-                Alert.alert('Error', 'Could not record video. Please try again.');
+                Alert.alert('Error', `Could not record video. ${response.errorMessage || 'Please try again.'}`);
                 return;
             }
             if (response.assets && response.assets[0]) {
@@ -154,13 +246,23 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             }
         });
     };
-
-    // --- MODIFIED: Added permission check ---
+ 
     const handleSelectVideoFromGallery = async () => {
-        const galleryPermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.PHOTO_LIBRARY : PERMISSIONS.ANDROID.READ_MEDIA_VIDEO;
+        const galleryPermission = Platform.select({
+            ios: PERMISSIONS.IOS.PHOTO_LIBRARY,
+            android: parseInt(Platform.Version as string, 10) >= 33
+                ? PERMISSIONS.ANDROID.READ_MEDIA_VIDEO
+                : PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
+        });
+    
+        if (!galleryPermission) {
+            Alert.alert("Error", "Unsupported platform.");
+            return;
+        }
+    
         const hasPermission = await requestPermission(galleryPermission);
         if (!hasPermission) {
-            Alert.alert("Permission Denied", "Photo Library access is required to select a video.");
+            Alert.alert("Permission Denied", "Storage access is required to select a video.");
             return;
         }
         
@@ -168,7 +270,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         launchImageLibrary(options, (response) => {
             if (response.didCancel) return;
             if (response.errorCode) {
-                Alert.alert('Error', 'Could not select video. Please try again.');
+                Alert.alert('Error', `Could not select video. ${response.errorMessage || 'Please try again.'}`);
                 return;
             }
             if (response.assets && response.assets[0]) {
@@ -190,9 +292,9 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             Alert.alert(
                 'Upload Profile Video', 'Choose an option',
                 [
-                    { text: 'Cancel', style: 'cancel' },
                     { text: 'Record Video', onPress: handleRecordVideo },
                     { text: 'Choose from Gallery', onPress: handleSelectVideoFromGallery },
+                    { text: 'Cancel', style: 'cancel' },
                 ],
                 { cancelable: true }
             );
@@ -202,7 +304,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     const handleSaveChanges = async () => {
         setSaving(true);
         try {
-            const profileData = {
+            const profileData: Partial<ProfileData> = {
                 name: fullName,
                 phone,
                 github,
@@ -210,12 +312,17 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
                 aboutMe,
                 skills: skills.split(',').map(s => s.trim()).filter(Boolean),
             };
+            // **INTEGRATION**: Using the real API function to update the profile
             await updateMyProfile(profileData);
             Alert.alert("Profile Saved", "Your information has been updated!");
-            navigation.goBack();
-        } catch (error) {
-            console.error("Failed to save profile:", error);
-            Alert.alert("Error", "Could not save your profile.");
+            
+            // **CHANGE**: As requested, navigation.goBack() is removed to stay on the screen.
+            // navigation.goBack(); 
+
+        } catch (error: any) {
+            // **INTEGRATION**: Improved error logging
+            console.error("Failed to save profile:", error.response?.data || error.message);
+            Alert.alert("Error", "Could not save your profile. Please check your inputs and try again.");
         } finally {
             setSaving(false);
         }
@@ -226,6 +333,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         return user?.email?.substring(0, 2).toUpperCase() || '??';
     };
 
+    // Render loading indicator while fetching data
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
@@ -233,14 +341,15 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
             </SafeAreaView>
         );
     }
-   
+    
+    // Main component render
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
                     <Text style={styles.title}>My Profile</Text>
-                    <TouchableOpacity onPress={handleSaveChanges}>
+                    <TouchableOpacity onPress={handleSaveChanges} disabled={saving}>
                         <Text style={styles.doneText}>Done</Text>
                     </TouchableOpacity>
                 </View>
@@ -252,7 +361,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
                         ) : (
                            <View style={styles.avatar}>
                                <Text style={styles.avatarText}>{getInitials()}</Text>
-                            </View>
+                           </View>
                         )}
                     </TouchableOpacity>
                     <Text style={styles.profileName}>{fullName || 'Your Name'}</Text>
@@ -307,6 +416,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     );
 };
 
+// --- STYLES (No changes) ---
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F9FAFB' },
     scrollContent: { padding: 20, paddingBottom: 40 },
