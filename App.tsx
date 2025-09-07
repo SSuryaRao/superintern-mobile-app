@@ -6,7 +6,8 @@ import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 import AppNavigator from './src/navigation/AppNavigator'; // Your main Tab Navigator
 import LoginScreen from './src/screens/LoginScreen';
-import ProfileScreen from './src/screens/ProfileScreen'; // Import the new screen
+import ProfileScreen from './src/screens/ProfileScreen';
+import LeaderboardScreen from './src/screens/LeaderboardScreen';
 
 const Stack = createStackNavigator();
 
@@ -38,6 +39,11 @@ const App = () => {
               name="Profile" 
               component={ProfileScreen} 
               options={{ presentation: 'modal' }} // This makes it slide up
+            />
+            <Stack.Screen 
+              name="Leaderboard" 
+              component={LeaderboardScreen} 
+              options={{ presentation: 'card' }}
             />
           </>
         ) : (

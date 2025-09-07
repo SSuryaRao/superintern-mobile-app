@@ -18,6 +18,7 @@ import { formatDistanceToNow } from 'date-fns'; // Using a library for date form
 
 // --- Icons ---
 const searchIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
+const clearIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 const locationIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
 const clockIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 
@@ -119,6 +120,10 @@ const JobsScreen = () => {
         fetchJobs();
     }, []);
 
+    const clearSearch = () => {
+        setSearchQuery('');
+    };
+
     // Filter jobs based on search query
     const filteredJobs = jobs.filter(job =>
         job.post.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -159,6 +164,15 @@ const JobsScreen = () => {
                                     value={searchQuery}
                                     onChangeText={setSearchQuery}
                                 />
+                                {searchQuery.length > 0 && (
+                                    <TouchableOpacity
+                                        onPress={clearSearch}
+                                        style={styles.clearButton}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <SvgXml xml={clearIcon} />
+                                    </TouchableOpacity>
+                                )}
                             </View>
                             <Text style={styles.sectionTitle}>Recent Postings</Text>
                         </Animated.View>
@@ -205,6 +219,12 @@ const styles = StyleSheet.create({
         paddingLeft: 12,
         fontSize: 16,
         color: '#111827',
+    },
+    clearButton: {
+        padding: 8,
+        borderRadius: 20,
+        backgroundColor: '#F3F4F6',
+        marginLeft: 8,
     },
     sectionTitle: {
         fontSize: 20,
