@@ -21,7 +21,8 @@ import {
     getAvailableTasks,
     getMyAssignedTasks,
     applyForTask,
-    getLeaderboard
+    getLeaderboard,
+    getMyApplications
 } from '../api/api';
 
 // --- Icons (no changes) ---
@@ -32,6 +33,7 @@ const plusIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 const clockIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
 const rightArrowIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+const leaderboardIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 15h1.5a2.5 2.5 0 0 1 0 5H4"></path><path d="M19.5 15H18a2.5 2.5 0 0 0 0 5h1.5"></path><path d="M12 6V3"></path><path d="M12 21v-3"></path><path d="M9 12H3"></path><path d="M21 12h-6"></path><circle cx="12" cy="12" r="4"></circle></svg>`;
 
 
 interface UserProfile {
@@ -70,6 +72,8 @@ const DashboardScreen = () => {
     const [leaderboardPosition, setLeaderboardPosition] = useState<number>(0);
     const [applyingTaskId, setApplyingTaskId] = useState<string | null>(null);
     const [showAllTasks, setShowAllTasks] = useState(false);
+    const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+    const [appliedTaskIds, setAppliedTaskIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         fetchDashboardData();
@@ -102,11 +106,12 @@ const DashboardScreen = () => {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const [profileRes, tasksRes, assignedRes, leaderboardRes] = await Promise.all([
+            const [profileRes, tasksRes, assignedRes, leaderboardRes, applicationsRes] = await Promise.all([
                 getMyProfile(),
                 getAvailableTasks(),
                 getMyAssignedTasks(),
-                getLeaderboard()
+                getLeaderboard(),
+                getMyApplications()
             ]);
 
             if (profileRes.data) setUserProfile(profileRes.data);
@@ -115,6 +120,10 @@ const DashboardScreen = () => {
             if (leaderboardRes.data && Array.isArray(leaderboardRes.data)) {
                 const userPosition = leaderboardRes.data.findIndex((u: any) => u.email === user?.email) + 1;
                 setLeaderboardPosition(userPosition || 0);
+            }
+            if (applicationsRes.data && Array.isArray(applicationsRes.data)) {
+                const appliedIds = new Set(applicationsRes.data.map((app: any) => app.task?._id).filter(Boolean));
+                setAppliedTaskIds(appliedIds);
             }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -190,6 +199,16 @@ const DashboardScreen = () => {
         }
     };
 
+    const toggleTaskExpansion = (taskId: string) => {
+        const newExpandedTasks = new Set(expandedTasks);
+        if (expandedTasks.has(taskId)) {
+            newExpandedTasks.delete(taskId);
+        } else {
+            newExpandedTasks.add(taskId);
+        }
+        setExpandedTasks(newExpandedTasks);
+    };
+
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
@@ -244,15 +263,17 @@ const DashboardScreen = () => {
                     </View>
                 </Animated.View>
 
-                {/* *** NEW SECTION: QUICK ACTIONS *** */}
+                {/* *** LEADERBOARD BUTTON *** */}
                 <Animated.View style={[styles.card, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                    <Text style={styles.cardTitle}>Quick Actions</Text>
                     <TouchableOpacity
                         style={styles.actionButton}
                         // @ts-ignore
-                        onPress={() => navigation.navigate('MyApplications')}
+                        onPress={() => navigation.navigate('Leaderboard')}
                     >
-                        <Text style={styles.actionButtonText}>View My Applications</Text>
+                        <View style={styles.actionButtonLeft}>
+                            <SvgXml xml={leaderboardIcon} />
+                            <Text style={styles.actionButtonText}>View Leaderboard</Text>
+                        </View>
                         <SvgXml xml={rightArrowIcon} />
                     </TouchableOpacity>
                 </Animated.View>
@@ -267,32 +288,59 @@ const DashboardScreen = () => {
                         )}
                     </View>
                     {availableTasks.length > 0 ? (
-                        (showAllTasks ? availableTasks : availableTasks.slice(0, 3)).map((task) => (
-                            <View key={task._id} style={styles.taskItem}>
-                                <View style={styles.taskInfo}>
-                                    <Text style={styles.taskTitle}>{task.title}</Text>
-                                    <View style={styles.taskMeta}>
-                                        <Text style={styles.taskPoints}>⭐ {task.points} pts</Text>
-                                        <View style={[styles.difficultyBadge, { backgroundColor: `${getDifficultyColor(task.difficulty)}20` }]}>
-                                            <Text style={[styles.difficultyText, { color: getDifficultyColor(task.difficulty) }]}>
-                                                {task.difficulty || 'Easy'}
-                                            </Text>
+                        (showAllTasks ? availableTasks : availableTasks.slice(0, 3)).map((task) => {
+                            const isExpanded = expandedTasks.has(task._id);
+                            const isApplied = appliedTaskIds.has(task._id);
+                            return (
+                                <TouchableOpacity 
+                                    key={task._id} 
+                                    style={styles.taskItem}
+                                    onPress={() => toggleTaskExpansion(task._id)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.taskInfo}>
+                                        <View style={styles.taskHeader}>
+                                            <Text style={styles.taskTitle}>{task.title}</Text>
+                                            {isApplied && (
+                                                <View style={styles.appliedIndicator}>
+                                                    <Text style={styles.checkMark}>✓</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                        
+                                        {isExpanded && task.description && (
+                                            <Text style={styles.taskDescription}>{task.description}</Text>
+                                        )}
+                                        
+                                        <View style={styles.taskMeta}>
+                                            <Text style={styles.taskPoints}>⭐ {task.points} pts</Text>
+                                            <View style={[styles.difficultyBadge, { backgroundColor: `${getDifficultyColor(task.difficulty)}20` }]}>
+                                                <Text style={[styles.difficultyText, { color: getDifficultyColor(task.difficulty) }]}>
+                                                    {task.difficulty || 'Easy'}
+                                                </Text>
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
-                                <TouchableOpacity 
-                                    style={styles.applyButton}
-                                    onPress={() => handleApplyForTask(task._id)}
-                                    disabled={applyingTaskId === task._id}
-                                >
-                                    {applyingTaskId === task._id ? (
-                                        <ActivityIndicator size="small" color="#FFFFFF" />
-                                    ) : (
-                                        <SvgXml xml={plusIcon} width={16} height={16} />
+                                    
+                                    {!isApplied && (
+                                        <TouchableOpacity 
+                                            style={styles.applyButton}
+                                            onPress={(e) => {
+                                                e.stopPropagation();
+                                                handleApplyForTask(task._id);
+                                            }}
+                                            disabled={applyingTaskId === task._id}
+                                        >
+                                            {applyingTaskId === task._id ? (
+                                                <ActivityIndicator size="small" color="#FFFFFF" />
+                                            ) : (
+                                                <SvgXml xml={plusIcon} width={16} height={16} />
+                                            )}
+                                        </TouchableOpacity>
                                     )}
                                 </TouchableOpacity>
-                            </View>
-                        ))
+                            );
+                        })
                     ) : (
                         <Text style={styles.emptyText}>No tasks available at the moment</Text>
                     )}
@@ -324,7 +372,7 @@ const DashboardScreen = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F0F5FF' },
-    scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
+    scrollContent: { paddingHorizontal: 20, paddingBottom: 20, paddingTop: 16 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 12, fontSize: 16, color: '#6B7280' },
     greetingCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFFBEB', borderRadius: 20, padding: 24, marginBottom: 24 },
@@ -343,9 +391,11 @@ const styles = StyleSheet.create({
     progressBarBackground: { height: 12, backgroundColor: '#E5E7EB', borderRadius: 6, overflow: 'hidden' },
     progressBarFill: { height: '100%', backgroundColor: '#8B5CF6', borderRadius: 6 },
     progressPercent: { alignSelf: 'flex-end', marginTop: 4, fontSize: 12, color: '#6B7280', fontWeight: '500' },
-    taskItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+    taskItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
     taskInfo: { flex: 1, marginRight: 12 },
-    taskTitle: { fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 4 },
+    taskHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    taskTitle: { fontSize: 16, fontWeight: '600', color: '#374151', flex: 1 },
+    taskDescription: { fontSize: 14, color: '#6B7280', lineHeight: 20, marginBottom: 8 },
     taskMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     taskPoints: { fontSize: 14, color: '#6B7280' },
     difficultyBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
@@ -372,6 +422,24 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#1F2937',
+    },
+    actionButtonLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    appliedIndicator: {
+        backgroundColor: '#10B981',
+        borderRadius: 12,
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkMark: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: 'bold',
     },
 });
 

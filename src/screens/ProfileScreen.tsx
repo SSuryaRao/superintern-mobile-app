@@ -92,6 +92,7 @@ const githubIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="2
 const locationIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
 const skillsIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
 const uploadIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+const documentIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`;
 
 // --- TYPES AND INTERFACES (No changes) ---
 type IconTextInputProps = TextInputProps & {
@@ -136,6 +137,8 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     const [aboutMe, setAboutMe] = useState('');
     const [avatarUri, setAvatarUri] = useState<string | null>(null);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [cvUrl, setCvUrl] = useState<string | null>(null);
+    const [isUploadingCv, setIsUploadingCv] = useState(false);
 
     // Fetch profile data when the component mounts
     useEffect(() => {
@@ -301,6 +304,17 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         }
     };
 
+    const handleUploadCv = async () => {
+        setIsUploadingCv(true);
+        // TODO: Implement CV upload functionality when backend API is ready
+        // For now, just simulate a successful upload
+        setTimeout(() => {
+            setCvUrl('cv_placeholder_url'); // Placeholder URL
+            setIsUploadingCv(false);
+            Alert.alert("Success", "CV upload functionality will be connected to backend API soon!");
+        }, 2000);
+    };
+
     const handleSaveChanges = async () => {
         setSaving(true);
         try {
@@ -389,6 +403,30 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
                             <Text style={styles.videoPreviewText}>✓ Video uploaded successfully</Text>
                             <TouchableOpacity onPress={showVideoOptions}>
                                 <Text style={styles.replaceVideoText}>Replace Video</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* CV Upload Section */}
+                    <TouchableOpacity 
+                        style={styles.uploadButton} 
+                        onPress={handleUploadCv} 
+                        disabled={isUploadingCv}
+                    >
+                        {isUploadingCv ? (
+                            <ActivityIndicator color="#6366F1" />
+                        ) : (
+                            <>
+                                <SvgXml xml={documentIcon} stroke="#6366F1" />
+                                <Text style={styles.uploadButtonText}>Upload CV/Resume</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                    {cvUrl && !isUploadingCv && (
+                        <View style={styles.videoPreview}>
+                            <Text style={styles.videoPreviewText}>✓ CV uploaded successfully</Text>
+                            <TouchableOpacity onPress={handleUploadCv}>
+                                <Text style={styles.replaceVideoText}>Replace CV</Text>
                             </TouchableOpacity>
                         </View>
                     )}
